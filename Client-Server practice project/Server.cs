@@ -24,6 +24,8 @@ public class SocketListener
             Socket listener = new Socket(IPAddress.Any.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             listener.Bind(localEndPoint);
             listener.Listen(10);
+            listener.ReceiveTimeout = 1000;
+            listener.SendTimeout = 1000;
 
             Console.WriteLine("Waiting for connection...");
             Socket handler = listener.Accept();

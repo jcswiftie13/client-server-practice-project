@@ -21,8 +21,6 @@ public class SocketClient
 
         Socket sender = new Socket(ipAddress.AddressFamily,
             SocketType.Stream, ProtocolType.Tcp);
-        sender.ReceiveTimeout = 1000;
-        sender.SendTimeout = 1000;
 
         try
         {
@@ -66,7 +64,7 @@ public class SocketClient
                     break;
                 }
             }
-            
+
             // Release the socket.    
             sender.Shutdown(SocketShutdown.Both);
             sender.Close();

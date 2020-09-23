@@ -15,7 +15,7 @@ public class ServerSocket
             listener.Bind(localEndPoint);
             listener.Listen(10);
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             Console.WriteLine(e.ToString());
         }

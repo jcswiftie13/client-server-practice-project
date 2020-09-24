@@ -6,7 +6,7 @@ using System.Net.NetworkInformation;
 
 public class ClientSocket
 {
-    public Socket init_socket(Socket sender, string address, int port)
+    public Socket InitSocket(Socket sender, string address, int port)
     {
         try
         {
@@ -28,12 +28,16 @@ public class client
     private static Socket sender = null;
     public static void Main(String[] args)
     {
+        StartClient();
+    }
+    private static void StartClient()
+    {
         var socket = new ClientSocket();
         Console.WriteLine("Input IP address: ");
         string address = Console.ReadLine();
         Console.WriteLine("Input port: ");
         string port = Console.ReadLine();
-        sender = socket.init_socket(sender, address, Convert.ToInt32(port));
+        sender = socket.InitSocket(sender, address, Convert.ToInt32(port));
         while (true)
         {
             byte[] bytes = new byte[1024];

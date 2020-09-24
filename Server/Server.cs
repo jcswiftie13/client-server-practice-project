@@ -6,7 +6,7 @@ using System.Text;
 
 public class ServerSocket
 {
-    public Socket init_socket(Socket listener, int port)
+    public Socket InitSocket(Socket listener, int port)
     {
         try
         {
@@ -29,7 +29,35 @@ public class utils
     {
         storage[name] = Convert.ToInt32(value);
     }
-    public string SetHandle(string[] command, Socket handler, Dictionary<string, int> storage)
+    public string CommandParser(string[] command, Dictionary<string, int> storage)
+    {
+        string data_out = null;
+        if (command.Length > 3)
+        {
+            data_out = "Invalid number of arguments.";
+            return data_out;
+        }
+        else
+        {
+            switch (command[0].ToLower())
+            {
+                case "get":
+                    data_out = GetHandle(command, storage);
+                    break;
+                case "set":
+                    data_out = SetHandle(command, storage);
+                    break;
+                case "ping":
+                    data_out = PingHandle();
+                    break;
+                default:
+                    data_out = "Invalid command.";
+                    break;
+            }
+            return data_out;
+        }
+    }
+    private string SetHandle(string[] command, Dictionary<string, int> storage)
     {
         if (command.Length == 3)
         {
@@ -41,7 +69,7 @@ public class utils
             return "Missing name or value.";
         }
     }
-    public string GetHandle(string[] command, Socket handler, Dictionary<string, int> storage)
+    private string GetHandle(string[] command, Dictionary<string, int> storage)
     {
         if (command.Length == 2)
         {
@@ -59,7 +87,7 @@ public class utils
             return "Missing name.";
         }
     }
-    public string PingHandle()
+    private string PingHandle()
     {
         return "PONG";
     }
@@ -68,13 +96,17 @@ public class utils
 public class Server
 {
     private static Dictionary<string, int> storage = new Dictionary<string, int>();
-    private static Socket listener = null;
+    private static Socket handler = null;
     public static void Main()
     {
-        var util = new utils();
+        StartServer();
+    }
+    public static void StartServer()
+    {
         var socket = new ServerSocket();
-        listener = socket.init_socket(listener, 11000);
-        Socket handler = listener.Accept();
+        var util = new utils();
+        handler = socket.InitSocket(handler, 11000);
+        handler = handler.Accept();
         while (true)
         {
             string data_in = null;
@@ -84,28 +116,9 @@ public class Server
             int bytesRec = handler.Receive(bytes);
             data_in += Encoding.ASCII.GetString(bytes, 0, bytesRec);
             command = data_in.Split(" ");
-            if (command.Length > 3)
-            {
-                byte[] msg = Encoding.ASCII.GetBytes("Invalid number of arguments");
-                int bytesSent = handler.Send(msg);
-            }
-            else
-            {
-                if (command[0].ToLower() == "get")
-                {
-                    data_out = util.GetHandle(command, handler, storage);
-                }
-                else if (command[0].ToLower() == "set")
-                {
-                    data_out = util.SetHandle(command, handler, storage);
-                }
-                else if (command[0].ToLower() == "ping")
-                {
-                    data_out = util.PingHandle();
-                }
-                byte[] msg = Encoding.ASCII.GetBytes(data_out);
-                int bytesSent = handler.Send(msg);
-            }
+            data_out = util.CommandParser(command, storage);
+            byte[] msg = Encoding.ASCII.GetBytes(data_out);
+            int bytesSent = handler.Send(msg);
         }
     }
 }

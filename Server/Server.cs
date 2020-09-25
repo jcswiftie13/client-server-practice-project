@@ -4,121 +4,105 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-public class ServerSocket
+namespace Server
 {
-    public Socket InitSocket(Socket listener, int port)
+    public class DBServer
     {
-        try
+        private Socket listener;
+        private Socket handler;
+        public DBServer(string ip, int port)
         {
-            IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, port);
-            listener = new Socket(IPAddress.Any.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            IPAddress ipAddress = IPAddress.Parse(ip);
+            IPEndPoint localEndPoint = new IPEndPoint(ipAddress, port);
+            listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             listener.Bind(localEndPoint);
-            listener.Listen(10);
         }
-        catch (Exception e)
-        {
-            Console.WriteLine(e.ToString());
-        }
-        return listener;
-    }
-}
 
-public class utils
-{
-    private void SetDic(Dictionary<string, int> storage, string name, string value)
-    {
-        storage[name] = Convert.ToInt32(value);
-    }
-    public string CommandParser(string[] command, Dictionary<string, int> storage)
-    {
-        string data_out = null;
-        if (command.Length > 3)
+        public void Start()
         {
-            data_out = "Invalid number of arguments.";
-            return data_out;
+            listener.Listen(10);
+            handler = listener.Accept();
         }
-        else
+
+        public string HandleInput(Dictionary<string, int> storage)
         {
-            switch (command[0].ToLower())
+            var CommandHandler = new CommandHandler();
+            while (true)
             {
-                case "get":
-                    data_out = GetHandle(command, storage);
-                    break;
-                case "set":
-                    data_out = SetHandle(command, storage);
-                    break;
-                case "ping":
-                    data_out = PingHandle();
-                    break;
-                default:
-                    data_out = "Invalid command.";
-                    break;
+                string dataIn = null;
+                byte[] bytes = new byte[1024];
+                int bytesRec = handler.Receive(bytes);
+                dataIn += Encoding.ASCII.GetString(bytes, 0, bytesRec);
+                return CommandHandler.HandleCommand(dataIn, storage);
             }
-            return data_out;
+        }
+        public void HandleOutput(string dataOut)
+        {
+            byte[] msg = Encoding.ASCII.GetBytes(dataOut);
+            int bytesSent = handler.Send(msg);
         }
     }
-    private string SetHandle(string[] command, Dictionary<string, int> storage)
+    public class CommandHandler
     {
-        if (command.Length == 3)
+        private void SetDic(Dictionary<string, int> storage, string name, string value)
         {
-            SetDic(storage, command[1], command[2]);
-            return $"SET {command[1]} OK";
+            storage[name] = Convert.ToInt32(value);
         }
-        else
+        public string HandleCommand(string command, Dictionary<string, int> storage)
         {
-            return "Missing name or value.";
-        }
-    }
-    private string GetHandle(string[] command, Dictionary<string, int> storage)
-    {
-        if (command.Length == 2)
-        {
-            if (storage.ContainsKey(command[1]))
+            string[] splitted = command.Split(" ");
+            if (splitted.Length > 3)
             {
-                return $"GET {command[1]} {storage[command[1]]}";
+                return "Invalid number of arguments.";
             }
             else
             {
-                return "Did not set this name.";
+                switch (splitted[0].ToLower())
+                {
+                    case "get":
+                        return GetHandle(splitted, storage);
+                    case "set":
+                        return SetHandle(splitted, storage);
+                    case "ping":
+                        return PingHandle();
+                    default:
+                        return "Invalid command.";
+                }
             }
         }
-        else
+        private string SetHandle(string[] command, Dictionary<string, int> storage)
         {
-            return "Missing name.";
+            if (command.Length == 3)
+            {
+                SetDic(storage, command[1], command[2]);
+                return $"SET {command[1]} OK";
+            }
+            else
+            {
+                return "Missing name or value.";
+            }
         }
-    }
-    private string PingHandle()
-    {
-        return "PONG";
-    }
-}
-
-public class Server
-{
-    private static Dictionary<string, int> storage = new Dictionary<string, int>();
-    private static Socket handler = null;
-    public static void Main()
-    {
-        StartServer();
-    }
-    public static void StartServer()
-    {
-        var socket = new ServerSocket();
-        var util = new utils();
-        handler = socket.InitSocket(handler, 11000);
-        handler = handler.Accept();
-        while (true)
+        private string GetHandle(string[] command, Dictionary<string, int> storage)
         {
-            string data_in = null;
-            string data_out = null;
-            string[] command = null;
-            byte[] bytes = new byte[1024];
-            int bytesRec = handler.Receive(bytes);
-            data_in += Encoding.ASCII.GetString(bytes, 0, bytesRec);
-            command = data_in.Split(" ");
-            data_out = util.CommandParser(command, storage);
-            byte[] msg = Encoding.ASCII.GetBytes(data_out);
-            int bytesSent = handler.Send(msg);
+            if (command.Length == 2)
+            {
+                if (storage.ContainsKey(command[1]))
+                {
+                    return $"GET {command[1]} {storage[command[1]]}";
+                }
+                else
+                {
+                    return "Did not set this name.";
+                }
+            }
+            else
+            {
+                return "Missing name.";
+            }
+        }
+        private string PingHandle()
+        {
+            return "PONG";
         }
     }
 }

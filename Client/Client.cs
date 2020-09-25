@@ -21,6 +21,24 @@ public class ClientSocket
         }
         return sender;
     }
+    public void InputHandle(byte[] bytes, string data, Socket sender)
+    {
+        int bytesSent;
+        int bytesRec;
+        Console.Write("Input command: ");
+        string input = Console.ReadLine();
+        do
+        {
+            byte[] msg = Encoding.ASCII.GetBytes(input);
+            bytesSent = sender.Send(msg);
+        } while (bytesSent > 0);
+        do
+        {
+            bytesRec = sender.Receive(bytes);
+            data = Encoding.ASCII.GetString(bytes, 0, bytesRec);
+        } while (bytesRec > 0);
+        Console.WriteLine(data);
+    }
 }
 
 public class client
@@ -42,15 +60,7 @@ public class client
         {
             byte[] bytes = new byte[1024];
             string data = null;
-            Console.Write("Input command: ");
-            string input = Console.ReadLine();
-            //輸入指令, name和value
-            byte[] msg = Encoding.ASCII.GetBytes(input);
-            int bytesSent = sender.Send(msg);
-            //接受回傳訊息
-            int bytesRec = sender.Receive(bytes);
-            data = Encoding.ASCII.GetString(bytes, 0, bytesRec);
-            Console.WriteLine(data);
+            socket.InputHandle(bytes, data, sender);
         }
     }
 }

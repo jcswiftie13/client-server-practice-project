@@ -28,8 +28,10 @@ namespace Server
         {
             int bytesLeft;
             string dataIn = null;
+            //接收訊息大小
             int bytesRec = handler.Receive(bytes);
             bytesLeft = Convert.ToInt32(Encoding.ASCII.GetString(bytes, 0, bytesRec));
+            //接收訊息
             while (bytesLeft > 0)
             {
                 bytesRec = handler.Receive(bytes);

@@ -10,11 +10,14 @@ namespace Server
         private static Dictionary<string, int> storage = new Dictionary<string, int>();
         public static void Main()
         {
+            byte[] bytes = new byte[1024];
             var socket = new DBServer("127.0.0.1", 11000);
-            var CommandHandler = new CommandHandler();
             socket.Start();
-            string dataOut = socket.HandleInput(storage);
-            socket.HandleOutput(dataOut);
+            while (true)
+            {
+                string dataOut = socket.HandleInput(storage, bytes);
+                socket.HandleOutput(dataOut);
+            }
         }
     }
 }

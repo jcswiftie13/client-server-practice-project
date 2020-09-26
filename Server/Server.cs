@@ -8,8 +8,8 @@ namespace Server
 {
     public class DBServer
     {
-        private Socket listener;
-        private Socket handler;
+        public Socket listener;
+        public Socket handler;
         public DBServer(string ip, int port)
         {
             IPAddress ipAddress = IPAddress.Parse(ip);
@@ -24,26 +24,32 @@ namespace Server
             handler = listener.Accept();
         }
 
-        public string HandleInput(Dictionary<string, int> storage)
+        public string HandleInput(Dictionary<string, int> storage, byte[] bytes)
         {
-            var CommandHandler = new CommandHandler();
-            while (true)
+            int bytesLeft;
+            string dataIn = null;
+            int bytesRec = handler.Receive(bytes);
+            bytesLeft = Convert.ToInt32(Encoding.ASCII.GetString(bytes, 0, bytesRec));
+            while (bytesLeft > 0)
             {
-                string dataIn = null;
-                byte[] bytes = new byte[1024];
-                int bytesRec = handler.Receive(bytes);
+                bytesRec = handler.Receive(bytes);
                 dataIn += Encoding.ASCII.GetString(bytes, 0, bytesRec);
-                return CommandHandler.HandleCommand(dataIn, storage);
+                bytesLeft -= bytesRec;
             }
+            return HandleCommand(dataIn, storage);
         }
         public void HandleOutput(string dataOut)
         {
+            string length;
             byte[] msg = Encoding.ASCII.GetBytes(dataOut);
-            int bytesSent = handler.Send(msg);
+            //取得訊息大小
+            length = Convert.ToString(msg.Length);
+            //傳送訊息大小
+            byte[] byteLength = Encoding.ASCII.GetBytes(length);
+            int bytesSent = handler.Send(byteLength);
+            //傳送訊息
+            bytesSent = handler.Send(msg);
         }
-    }
-    public class CommandHandler
-    {
         private void SetDic(Dictionary<string, int> storage, string name, string value)
         {
             storage[name] = Convert.ToInt32(value);

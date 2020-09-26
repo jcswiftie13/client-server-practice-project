@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Collections.Generic;
 using System.Net.NetworkInformation;
 
 public class ClientSocket
@@ -21,23 +22,39 @@ public class ClientSocket
         }
         return sender;
     }
-    public void InputHandle(byte[] bytes, string data, Socket sender)
+    public void InputHandle(byte[] bytes, Socket sender)
     {
-        int bytesSent;
-        int bytesRec;
+        string length;
         Console.Write("Input command: ");
         string input = Console.ReadLine();
-        do
-        {
-            byte[] msg = Encoding.ASCII.GetBytes(input);
-            bytesSent = sender.Send(msg);
-        } while (bytesSent > 0);
-        do
+        byte[] msg = Encoding.ASCII.GetBytes(input);
+        Send(msg, sender);
+        Receive(bytes, sender);
+    }
+    private void Send(byte[] msg, Socket sender)
+    {
+        string length;
+        //取得訊息大小
+        length = Convert.ToString(msg.Length);
+        byte[] byteLength = Encoding.ASCII.GetBytes(length);
+        //傳送訊息大小
+        int bytesSent = sender.Send(byteLength);
+        //傳送訊息
+        bytesSent = sender.Send(msg);
+    }
+    private void Receive(byte[] bytes, Socket sender)
+    {
+        int bytesLeft;
+        string dataIn = null;
+        int bytesRec = sender.Receive(bytes);
+        bytesLeft = Convert.ToInt32(Encoding.ASCII.GetString(bytes, 0, bytesRec));
+        while (bytesLeft > 0)
         {
             bytesRec = sender.Receive(bytes);
-            data = Encoding.ASCII.GetString(bytes, 0, bytesRec);
-        } while (bytesRec > 0);
-        Console.WriteLine(data);
+            dataIn += Encoding.ASCII.GetString(bytes, 0, bytesRec);
+            bytesLeft -= bytesRec;
+        }
+        Console.WriteLine(dataIn);
     }
 }
 
@@ -59,8 +76,7 @@ public class client
         while (true)
         {
             byte[] bytes = new byte[1024];
-            string data = null;
-            socket.InputHandle(bytes, data, sender);
+            socket.InputHandle(bytes, sender);
         }
     }
 }

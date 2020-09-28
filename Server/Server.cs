@@ -10,6 +10,7 @@ namespace Server
     {
         public Socket listener;
         public Socket handler;
+        private Dictionary<string, int> storage = new Dictionary<string, int>();
         public DBServer(string ip, int port)
         {
             IPAddress ipAddress = IPAddress.Parse(ip);
@@ -22,23 +23,31 @@ namespace Server
         {
             listener.Listen(10);
             handler = listener.Accept();
+            while (true)
+            {
+                byte[] bytes = new byte[1024];
+                string dataOut = handleInput(storage, bytes);
+                handleOutput(dataOut);
+            }
         }
 
-        public string HandleInput(Dictionary<string, int> storage, byte[] bytes)
+        private string handleInput(Dictionary<string, int> storage, byte[] bytes)
         {
             int bytesLeft;
             string dataIn = null;
+            //接收訊息大小
             int bytesRec = handler.Receive(bytes);
             bytesLeft = Convert.ToInt32(Encoding.ASCII.GetString(bytes, 0, bytesRec));
+            //接收訊息
             while (bytesLeft > 0)
             {
                 bytesRec = handler.Receive(bytes);
                 dataIn += Encoding.ASCII.GetString(bytes, 0, bytesRec);
                 bytesLeft -= bytesRec;
             }
-            return HandleCommand(dataIn, storage);
+            return handleCommand(dataIn, storage);
         }
-        public void HandleOutput(string dataOut)
+        private void handleOutput(string dataOut)
         {
             string length;
             byte[] msg = Encoding.ASCII.GetBytes(dataOut);
@@ -54,7 +63,7 @@ namespace Server
         {
             storage[name] = Convert.ToInt32(value);
         }
-        public string HandleCommand(string command, Dictionary<string, int> storage)
+        private string handleCommand(string command, Dictionary<string, int> storage)
         {
             string[] splitted = command.Split(" ");
             if (splitted.Length > 3)
@@ -66,17 +75,17 @@ namespace Server
                 switch (splitted[0].ToLower())
                 {
                     case "get":
-                        return GetHandle(splitted, storage);
+                        return getHandle(splitted, storage);
                     case "set":
-                        return SetHandle(splitted, storage);
+                        return setHandle(splitted, storage);
                     case "ping":
-                        return PingHandle();
+                        return pingHandle();
                     default:
                         return "Invalid command.";
                 }
             }
         }
-        private string SetHandle(string[] command, Dictionary<string, int> storage)
+        private string setHandle(string[] command, Dictionary<string, int> storage)
         {
             if (command.Length == 3)
             {
@@ -88,7 +97,7 @@ namespace Server
                 return "Missing name or value.";
             }
         }
-        private string GetHandle(string[] command, Dictionary<string, int> storage)
+        private string getHandle(string[] command, Dictionary<string, int> storage)
         {
             if (command.Length == 2)
             {
@@ -106,7 +115,7 @@ namespace Server
                 return "Missing name.";
             }
         }
-        private string PingHandle()
+        private string pingHandle()
         {
             return "PONG";
         }

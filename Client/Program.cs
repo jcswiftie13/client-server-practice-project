@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Server;
+using System.Net;
+using System.Net.Sockets;
+using Client;
 
-namespace Server
+namespace Client
 {
     class Program
     {
         public static void Main()
         {
-            var socket = new DBServer("127.0.0.1", 11000);
+            var socket = new DBClient();
             socket.Start();
         }
     }

@@ -7,13 +7,17 @@ namespace Client
 {
     public class DBClient
     {
-        private static Socket sender;
-        public DBClient(string ip, int port)
+        private Socket sender;
+        public DBClient()
         {
+            Console.WriteLine("Input IP address: ");
+            string ip = Console.ReadLine();
+            Console.WriteLine("Input port: ");
+            string port = Console.ReadLine();
             try
             {
                 IPAddress ipAddress = IPAddress.Parse(ip);
-                IPEndPoint RemoteEndPoint = new IPEndPoint(ipAddress, port);
+                IPEndPoint RemoteEndPoint = new IPEndPoint(ipAddress, Convert.ToInt32(port));
                 sender = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 sender.Connect(RemoteEndPoint);
             }
@@ -22,15 +26,23 @@ namespace Client
                 Console.WriteLine(e.ToString());
             }
         }
-        public void InputHandle(byte[] bytes)
+        public void Start()
+        {
+            while (true)
+            {
+                byte[] bytes = new byte[1024];
+                inputHandle(bytes);
+            }
+        }
+        private void inputHandle(byte[] bytes)
         {
             Console.Write("Input command: ");
             string input = Console.ReadLine();
             byte[] msg = Encoding.ASCII.GetBytes(input);
-            Send(msg, sender);
-            Receive(bytes, sender);
+            send(msg, sender);
+            receive(bytes, sender);
         }
-        private void Send(byte[] msg, Socket sender)
+        private void send(byte[] msg, Socket sender)
         {
             string length;
             //取得訊息大小
@@ -41,7 +53,7 @@ namespace Client
             //傳送訊息
             bytesSent = sender.Send(msg);
         }
-        private void Receive(byte[] bytes, Socket sender)
+        private void receive(byte[] bytes, Socket sender)
         {
             int bytesLeft;
             string dataIn = null;

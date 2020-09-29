@@ -38,33 +38,22 @@ namespace Client
         {
             Console.Write("Input command: ");
             string input = Console.ReadLine();
-            byte[] msg = Encoding.ASCII.GetBytes(input);
-            send(msg, sender);
+            send(input, sender);
             receive(bytes, sender);
         }
-        private void send(byte[] msg, Socket sender)
+        private void send(string input, Socket sender)
         {
-            string length;
-            //取得訊息大小
-            length = Convert.ToString(msg.Length);
-            byte[] byteLength = Encoding.ASCII.GetBytes(length);
-            //傳送訊息大小
-            int bytesSent = sender.Send(byteLength);
-            //傳送訊息
-            bytesSent = sender.Send(msg);
+            byte[] msg = Encoding.ASCII.GetBytes(input);
+            int bytesSent = sender.Send(msg);
         }
         private void receive(byte[] bytes, Socket sender)
         {
-            int bytesLeft;
             string dataIn = null;
-            int bytesRec = sender.Receive(bytes);
-            bytesLeft = Convert.ToInt32(Encoding.ASCII.GetString(bytes, 0, bytesRec));
-            while (bytesLeft > 0)
+            do
             {
-                bytesRec = sender.Receive(bytes);
+                int bytesRec = sender.Receive(bytes);
                 dataIn += Encoding.ASCII.GetString(bytes, 0, bytesRec);
-                bytesLeft -= bytesRec;
-            }
+            } while (!Array.Exists(bytes, c => c == 0));
             Console.WriteLine(dataIn);
         }
     }

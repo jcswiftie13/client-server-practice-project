@@ -10,7 +10,7 @@ namespace Server
     {
         public Socket listener;
         public Socket handler;
-        private Dictionary<string, int> storage = new Dictionary<string, int>();
+        private Dictionary<string, string> storage = new Dictionary<string, string>();
         public DBServer(string ip, int port)
         {
             IPAddress ipAddress = IPAddress.Parse(ip);
@@ -31,39 +31,26 @@ namespace Server
             }
         }
 
-        private string handleInput(Dictionary<string, int> storage, byte[] bytes)
+        private string handleInput(Dictionary<string, string> storage, byte[] bytes)
         {
-            int bytesLeft;
             string dataIn = null;
-            //接收訊息大小
-            int bytesRec = handler.Receive(bytes);
-            bytesLeft = Convert.ToInt32(Encoding.ASCII.GetString(bytes, 0, bytesRec));
-            //接收訊息
-            while (bytesLeft > 0)
+            do
             {
-                bytesRec = handler.Receive(bytes);
+                int bytesRec = handler.Receive(bytes);
                 dataIn += Encoding.ASCII.GetString(bytes, 0, bytesRec);
-                bytesLeft -= bytesRec;
-            }
+            } while (!Array.Exists(bytes, c => c == 0));
             return handleCommand(dataIn, storage);
         }
         private void handleOutput(string dataOut)
         {
-            string length;
             byte[] msg = Encoding.ASCII.GetBytes(dataOut);
-            //取得訊息大小
-            length = Convert.ToString(msg.Length);
-            //傳送訊息大小
-            byte[] byteLength = Encoding.ASCII.GetBytes(length);
-            int bytesSent = handler.Send(byteLength);
-            //傳送訊息
-            bytesSent = handler.Send(msg);
+            int bytesSent = handler.Send(msg);
         }
-        private void SetDic(Dictionary<string, int> storage, string name, string value)
+        private void SetDic(Dictionary<string, string> storage, string name, string value)
         {
-            storage[name] = Convert.ToInt32(value);
+            storage[name] = value;
         }
-        private string handleCommand(string command, Dictionary<string, int> storage)
+        private string handleCommand(string command, Dictionary<string, string> storage)
         {
             string[] splitted = command.Split(" ");
             if (splitted.Length > 3)
@@ -85,7 +72,7 @@ namespace Server
                 }
             }
         }
-        private string setHandle(string[] command, Dictionary<string, int> storage)
+        private string setHandle(string[] command, Dictionary<string, string> storage)
         {
             if (command.Length == 3)
             {
@@ -97,7 +84,7 @@ namespace Server
                 return "Missing name or value.";
             }
         }
-        private string getHandle(string[] command, Dictionary<string, int> storage)
+        private string getHandle(string[] command, Dictionary<string, string> storage)
         {
             if (command.Length == 2)
             {
